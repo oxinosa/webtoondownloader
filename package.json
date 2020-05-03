@@ -12,6 +12,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
     "cli-progress": "^3.8.1",
+    "inquirer": "^7.1.0",
     "pdfkit": "^0.11.0",
     "snekfetch": "^4.0.4"
   },
