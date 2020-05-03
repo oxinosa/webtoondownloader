@@ -26,7 +26,7 @@ const readline = require("readline").createInterface({
 });
 
 const webToonIdQuestion = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     readline.question("Whats the ID of the webtoon you want? ", (id) => {
       webtoonId = id;
       resolve();
@@ -50,7 +50,7 @@ const grabWebtoonsInfo = async () => {
 };
 
 const grabEpisodeRangeStart = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     readline.question("What episode you want the download to start? ", (id) => {
       episodeToDownloadStart = id;
       resolve();
@@ -59,7 +59,7 @@ const grabEpisodeRangeStart = () => {
 };
 
 const grabEpisodeRangeEnd = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     readline.question("What episode you want the download to end? ", (id) => {
       episodeToDownloadEnd = id;
       resolve();
@@ -68,7 +68,7 @@ const grabEpisodeRangeEnd = () => {
 };
 
 const grabLocation = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     readline.question(
       "Where do you want the files to download?(provide full path) ",
       (id) => {
@@ -110,6 +110,8 @@ const startDownload = async () => {
       ...Array.from(images).map((img, id) => ({
         link: img.attribs["data-url"].split("?")[0],
         id: id,
+        width: img.attribs["width"],
+        height: img.attribs["height"]
       }))
     );
     ebar.update(eFinished++);
@@ -121,7 +123,7 @@ const startDownload = async () => {
 const startDownloadLinks = async (info) => {
   const ebar = new progress.Bar({
     format:
-      "Indexing Episodes [{bar}] {percentage}% | ETA: {eta}s | Episode {value}/{total}",
+      "Downloading Episodes [{bar}] {percentage}% | ETA: {eta}s | Episode {value}/{total}",
   });
   ebar.start(episodeToDownloadEnd - episodeToDownloadStart + 1, 0);
   let eFinished = 1;
@@ -129,12 +131,12 @@ const startDownloadLinks = async (info) => {
     const episode = episodes[i];
     const panels = [];
     await Promise.all(
-      episode.links.map(async ({ link, id }) => {
+      episode.links.map(async ({ link, id, width, height }) => {
         const buf = await request
           .get(link)
           .set("Referer", "http://www.webtoons.com")
           .then((r) => r.raw);
-        panels.push({ buf, id });
+        panels.push({ buf, id, width, height });
       })
     );
     panels.sort((p1, p2) => p1.id - p2.id);
@@ -148,8 +150,8 @@ const startDownloadLinks = async (info) => {
     const doc = new PDFDocument({ autoFirstPage: false });
     const out = path.resolve(location, `${info.name}-${episode.id}.pdf`);
     doc.pipe(fs.createWriteStream(out));
-    for (const { buf } of panels) {
-      doc.addPage({ size: [800, 1127] });
+    for (const { buf, width, height } of panels) {
+      doc.addPage({ size: [parseInt(width), parseInt(height)] });
       doc.image(buf, 0, 0);
     }
     doc.end();
@@ -167,4 +169,5 @@ const startDownloadLinks = async (info) => {
   await grabLocation();
   await startDownload();
   await startDownloadLinks(info);
+  console.log("Enjoy");
 })();
