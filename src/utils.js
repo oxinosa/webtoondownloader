@@ -10,7 +10,7 @@ const grabSearchResults = async (searchTerm) => {
   if (searchItemCount > 0) {
     console.log(`Found ${searchItemCount} items.`);
     const searchList = [];
-    const list = $(".card_lst > li > .card_item").each(function(i, item) {
+    $(".card_lst > li > .card_item").each(function(_i, item) {
       searchList.push({
         name: $(".info > .subj", item).text(),
         id: parseInt($(item).attr("href").split("titleNo=")[1])

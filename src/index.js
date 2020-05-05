@@ -36,7 +36,7 @@ const askWhatToDownload = async (list) => {
     ])
     .then((a) => {
       const { webtoonId } = a;
-      const id = list.filter(f => f.name === webtoonId)[0].id;
+      const id = list.filter((f) => f.name === webtoonId)[0].id;
       return id;
     });
 };
@@ -45,7 +45,10 @@ const main = async () => {
   const answers = await askQuestions();
   const list = await grabSearchResults(answers.searchTerm);
   const id = await askWhatToDownload(list);
-  console.log(id);
+  return id;
 };
 
-main();
+module.exports = {
+  main,
+};
+//main();

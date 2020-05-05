@@ -7,9 +7,10 @@ const cheerio = require("cheerio");
 const request = require("snekfetch");
 const util = require("util");
 const PDFDocument = require("pdfkit");
-
+const main = require("./src/index").main;
 const mkdirAsync = util.promisify(fs.mkdir);
 const accessAsync = util.promisify(fs.access);
+const inquirer = require("inquirer");
 
 let webtoonId = -1;
 let episodeToDownloadStart = -1;
@@ -49,37 +50,33 @@ const grabWebtoonsInfo = async () => {
   return info;
 };
 
-const grabEpisodeRangeStart = () => {
-  return new Promise((resolve) => {
-    readline.question("What episode you want the download to start? ", (id) => {
-      episodeToDownloadStart = id;
-      resolve();
-    });
-  });
-};
-
-const grabEpisodeRangeEnd = () => {
-  return new Promise((resolve) => {
-    readline.question("What episode you want the download to end? ", (id) => {
-      episodeToDownloadEnd = id;
-      resolve();
-    });
-  });
-};
-
-const grabLocation = () => {
-  return new Promise((resolve) => {
-    readline.question(
-      "Where do you want the files to download?(provide full path) ",
-      (id) => {
-        if (id !== "") {
-          locationToDownload = id;
-          console.log("location is set to: ", locationToDownload);
-        }
-        resolve();
+const grabAnwsers = () => {
+  return inquirer
+    .prompt([
+      {
+        type: "number",
+        name: "rangeStart",
+        message: "What episode you want the download to start? ",
+      },
+      {
+        type: "number",
+        name: "rangeEnd",
+        message: "What episode you want the download to end? ",
+      },
+      {
+        type: "input",
+        name: "location",
+        message: "Where do you want the files to download?(provide full path) "
       }
-    );
-  });
+    ])
+    .then((anwser) => {
+      episodeToDownloadStart = anwser.rangeStart;
+      episodeToDownloadEnd = anwser.rangeEnd;
+      locationToDownload = anwser.location;
+    })
+    .catch((e) => {
+      console.log(e);
+    });
 };
 
 const startDownload = async () => {
@@ -111,7 +108,7 @@ const startDownload = async () => {
         link: img.attribs["data-url"].split("?")[0],
         id: id,
         width: img.attribs["width"],
-        height: img.attribs["height"]
+        height: img.attribs["height"],
       }))
     );
     ebar.update(eFinished++);
@@ -161,12 +158,15 @@ const startDownloadLinks = async (info) => {
 };
 
 (async () => {
-  await webToonIdQuestion();
+  const id = await main();
+  if (typeof id === "undefined") {
+    await webToonIdQuestion();
+  } else {
+    webtoonId = id;
+  }
   const info = await grabWebtoonsInfo();
   console.log(`We found ${info.episodes} episodes of ${info.name}`);
-  await grabEpisodeRangeStart();
-  await grabEpisodeRangeEnd();
-  await grabLocation();
+  await grabAnwsers();
   await startDownload();
   await startDownloadLinks(info);
   console.log("Enjoy");
